@@ -24,6 +24,9 @@ log = logging.getLogger("pyexchange")
 
 class Exchange2010Service(ExchangeServiceSOAP):
 
+  def availability(self, email, start, end):
+    return Exchange2010AvailabilityService(service=self, email=email, start=start, end=end)
+
   def calendar(self, id="calendar"):
     return Exchange2010CalendarService(service=self, calendar_id=id)
 
@@ -914,3 +917,27 @@ class Exchange2010Folder(BaseExchangeFolder):
       return id_element.get(u"Id", None), id_element.get(u"ChangeKey", None)
     else:
       return None, None
+
+class Exchange2010AvailabilityService(object):
+  def __init__(self, service, email, start, end):
+    self.service = service
+    body = soap_request.get_user_availability(email, start=start, end=end)
+    response_xml = self.service.send(body)
+    self.service._check_for_errors(response_xml)
+    self._parse_all_options(response_xml)
+
+  def _parse_all_options(self, response):
+    property_map = {
+        u'starttime': {u'xpath': u't:StartTime'},
+        u'endtime': {u'xpath': u't:EndTime'},
+    }
+    self.list_slots = []
+    calendar_events = response.xpath(u'//m:GetUserAvailabilityResponse/m:FreeBusyResponseArray/m:FreeBusyResponse/m:FreeBusyView/t:CalendarEventArray/t:CalendarEvent',
+                              namespaces=soap_request.NAMESPACES)
+    for event in calendar_events:
+        self.list_slots.append(self.service._xpath_to_dict(element=event,
+                                            property_map=property_map,
+                                            namespace_map=soap_request.NAMESPACES)
+                                )
+    return self.list_slots
+

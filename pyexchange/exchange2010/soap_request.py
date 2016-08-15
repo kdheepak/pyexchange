@@ -625,3 +625,87 @@ def update_item(event, updated_attributes, calendar_item_update_operation_type):
       )
 
   return root
+
+
+def get_user_availability(user_email, calendar_id=u'calendar', start=None, end=None,):
+  """
+    <m:GetUserAvailabilityRequest>
+      <m:MailboxDataArray>
+        <t:MailboxData>
+          <t:Email>
+            <t:Address>mack@contoso.com</t:Address>
+          </t:Email>
+          <t:AttendeeType>Organizer</t:AttendeeType>
+          <t:ExcludeConflicts>false</t:ExcludeConflicts>
+        </t:MailboxData>
+        <t:MailboxData>
+          <t:Email>
+            <t:Address>sadie@contoso.com</t:Address>
+          </t:Email>
+          <t:AttendeeType>Required</t:AttendeeType>
+          <t:ExcludeConflicts>false</t:ExcludeConflicts>
+        </t:MailboxData>
+      </m:MailboxDataArray>
+      <t:FreeBusyViewOptions>
+        <t:TimeWindow>
+          <t:StartTime>2014-02-13T00:00:00</t:StartTime>
+          <t:EndTime>2014-02-14T00:00:00</t:EndTime>
+        </t:TimeWindow>
+        <t:MergedFreeBusyIntervalInMinutes>30</t:MergedFreeBusyIntervalInMinutes>
+        <t:RequestedView>FreeBusy</t:RequestedView>
+      </t:FreeBusyViewOptions>
+      <t:SuggestionsViewOptions>
+        <t:GoodThreshold>49</t:GoodThreshold>
+        <t:MaximumResultsByDay>2</t:MaximumResultsByDay>
+        <t:MaximumNonWorkHourResultsByDay>0</t:MaximumNonWorkHourResultsByDay>
+        <t:MeetingDurationInMinutes>60</t:MeetingDurationInMinutes>
+        <t:MinimumSuggestionQuality>Good</t:MinimumSuggestionQuality>
+        <t:DetailedSuggestionsWindow>
+          <t:StartTime>2014-02-13T00:00:00</t:StartTime>
+          <t:EndTime>2014-02-14T00:00:00</t:EndTime>
+        </t:DetailedSuggestionsWindow>
+      </t:SuggestionsViewOptions>
+    </m:GetUserAvailabilityRequest>
+  """
+  start = start.strftime(EXCHANGE_DATETIME_FORMAT)
+  end = end.strftime(EXCHANGE_DATETIME_FORMAT)
+
+  root = M.GetUserAvailabilityRequest(
+        T.TimeZone(
+            T.Bias('480'),
+            T.StandardTime(
+                T.Bias('0'),
+                T.Time('02:00:00'),
+                T.DayOrder('5'),
+                T.Month('10'),
+                T.DayOfWeek('Sunday')
+                ),
+            T.DaylightTime(
+                T.Bias('-60'),
+                T.Time('02:00:00'),
+                T.DayOrder('1'),
+                T.Month('4'),
+                T.DayOfWeek('Sunday')
+                )
+            ),
+        M.MailboxDataArray(
+            T.MailboxData(
+                T.Email(
+                    T.Address(user_email)
+                ),
+                T.AttendeeType('Required'),
+                T.ExcludeConflicts('false')
+            )
+        ),
+        T.FreeBusyViewOptions(
+            T.TimeWindow(
+                T.StartTime(start),
+                T.EndTime(end),
+            ),
+            T.MergedFreeBusyIntervalInMinutes('60'),
+            T.RequestedView('FreeBusy')
+        )
+
+    )
+
+  return root
